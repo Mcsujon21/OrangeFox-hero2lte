@@ -28,8 +28,8 @@ jobs:
           export PATH="~/bin:$PATH"
           mkdir ~/OrangeFox
           cd ~/OrangeFox
-          git config --global user.name "YourName"
-          git config --global user.email "you@example.com"
+          git config --global user.name "Mcsujon21"
+          git config --global user.email "mcsujon21@gmail.com"
           repo init -u https://github.com/OrangeFox-Recovery/manifest.git -b fox_11.0 --depth=1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_11.0 device/samsung/hero2lte
