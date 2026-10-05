@@ -30,7 +30,7 @@ jobs:
           cd ~/OrangeFox
           git config --global user.name "Mcsujon21"
           git config --global user.email "mcsujon21@gmail.com"
-          repo init -u https://gitlab.com/OrangeFox/manifest.git -b fox_11.0 --depth=1 --no-repo-verify
+          repo init -u https://gitlab.com/OrangeFox/manifest.git -b fox_12.1 --depth=1 --no-repo-verify
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
           git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_11.0 device/samsung/hero2lte
           source build/envsetup.sh
@@ -42,3 +42,5 @@ jobs:
         with:
           name: OrangeFox-hero2lte
           path: ~/OrangeFox/out/target/product/hero2lte/*.zip
+
+  
