@@ -23,28 +23,28 @@ jobs:
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
 
-      - name: Sync Source using Official Script
+      - name: Sync Source & Build
         run: |
           export PATH="$HOME/bin:$PATH"
-          mkdir -p ~/OrangeFox
-          cd ~/OrangeFox
+          export WORK_DIR="/home/runner/OrangeFox"
+          
           git config --global user.name "Mcsujon21"
           git config --global user.email "mcsujon21@gmail.com"
           
-          # OrangeFox official sync script
-          git clone https://gitlab.com/OrangeFox/sync.git
-          cd sync
-          ./orangefox_sync.sh --branch 9.0 --path ~/OrangeFox/fox_9.0
-
-      - name: Build Recovery
-        run: |
-          export PATH="$HOME/bin:$PATH"
-          cd ~/OrangeFox/fox_9.0
+          # Clone sync tool
+          git clone https://gitlab.com/OrangeFox/sync.git ~/sync
+          cd ~/sync
+          
+          # Run sync script with absolute path ($WORK_DIR)
+          ./orangefox_sync.sh --branch 9.0 --path "$WORK_DIR"
+          
+          # Navigate to synced directory
+          cd "$WORK_DIR"
           
           # Clone Device Tree
           git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_9.0 device/samsung/hero2lte
           
-          # Build environment setup & compile
+          # Build process
           source build/envsetup.sh
           lunch omni_hero2lte-eng
           mka recoveryimage -j$(nproc)
@@ -53,4 +53,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OrangeFox-hero2lte
-          path: ~/OrangeFox/fox_9.0/out/target/product/hero2lte/*.zip
+          path: /home/runner/OrangeFox/out/target/product/hero2lte/*.zip
