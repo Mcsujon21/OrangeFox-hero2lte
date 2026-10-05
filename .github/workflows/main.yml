@@ -1,15 +1,15 @@
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: true
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
-
-name: Build OrangeFox Recovery
+  - name: Free Disk Space (Ubuntu)
+    uses: jlumbroso/free-disk-space@main
+    with:
+    tool-cache: true
+    android: true
+    dotnet: true
+    haskell: true
+    large-packages: true
+    docker-images: true
+    swap-storage: true
+    
+    name: Build OrangeFox Recovery
 
 on:
   workflow_dispatch:
