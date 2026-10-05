@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
 
-    <!-- Galaxy S7 Edge Exynos device tree -->
     <project 
         name="OrangeFoxRecovery/device_samsung_hero2lte"
         path="device/samsung/hero2lte"
         remote="github"
         revision="fox_12.1" />
+
+    <project
+        name="morogoku/android_kernel_samsung_universal8890"
+        path="kernel/samsung/universal8890"
+        remote="github"
+        revision="twrp" />
 
 </manifest>
