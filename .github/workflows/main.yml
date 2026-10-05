@@ -26,25 +26,22 @@ jobs:
       - name: Sync Source & Build
         run: |
           export PATH="$HOME/bin:$PATH"
-          export WORK_DIR="/home/runner/OrangeFox"
+          mkdir -p /home/runner/OrangeFox
+          cd /home/runner/OrangeFox
           
           git config --global user.name "Mcsujon21"
           git config --global user.email "mcsujon21@gmail.com"
           
-          # Clone sync tool
-          git clone https://gitlab.com/OrangeFox/sync.git ~/sync
-          cd ~/sync
+          # Initialize Repo with fox_9.0 manifest
+          repo init -u https://gitlab.com/OrangeFox/Manifest.git -b fox_9.0 --depth=1
           
-          # Run sync script with absolute path ($WORK_DIR)
-          ./orangefox_sync.sh --branch 9.0 --path "$WORK_DIR"
+          # Sync with force flags to bypass dead/broken submodules
+          repo sync -c --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc) || repo sync -c --force-sync -j1
           
-          # Navigate to synced directory
-          cd "$WORK_DIR"
-          
-          # Clone Device Tree
+          # Clone Device Tree for hero2lte
           git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_9.0 device/samsung/hero2lte
           
-          # Build process
+          # Build OrangeFox Recovery
           source build/envsetup.sh
           lunch omni_hero2lte-eng
           mka recoveryimage -j$(nproc)
