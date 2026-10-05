@@ -25,14 +25,14 @@ jobs:
 
       - name: Sync Source & Build
         run: |
-          export PATH="~/bin:$PATH"
+          export PATH="$HOME/bin:$PATH"
           mkdir ~/OrangeFox
           cd ~/OrangeFox
           git config --global user.name "Mcsujon21"
           git config --global user.email "mcsujon21@gmail.com"
-          repo init -u https://gitlab.com/OrangeFox/manifest.git -b fox_12.1 --depth=1 --no-repo-verify
+          repo init -u https://gitlab.com/OrangeFox/Manifest.git -b fox_9.0 --depth=1
           repo sync -c --no-clone-bundle --no-tags --optimized-fetch --prune -j$(nproc)
-          git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_11.0 device/samsung/hero2lte
+          git clone https://github.com/OrangeFox-Recovery-Devices/device_samsung_hero2lte.git -b fox_9.0 device/samsung/hero2lte
           source build/envsetup.sh
           lunch omni_hero2lte-eng
           mka recoveryimage -j$(nproc)
@@ -42,5 +42,3 @@ jobs:
         with:
           name: OrangeFox-hero2lte
           path: ~/OrangeFox/out/target/product/hero2lte/*.zip
-
-  
