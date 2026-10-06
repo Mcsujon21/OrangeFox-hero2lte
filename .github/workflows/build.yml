@@ -4,10 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
 
@@ -15,11 +13,33 @@ jobs:
       uses: actions/checkout@v4
 
 
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/powershell
+        sudo apt clean
+        df -h
+
+
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y git curl repo bc bison build-essential \
-        flex gperf libxml2-utils python3 unzip zip
+        sudo apt install -y \
+          bc bison build-essential ccache curl flex g++-multilib \
+          gcc-multilib git gnupg gperf imagemagick lib32readline-dev \
+          lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev \
+          libssl-dev libxml2 libxml2-utils lzop pngcrush rsync \
+          schedtool squashfs-tools unzip zip zlib1g-dev
+
+
+    - name: Install repo
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        echo "$HOME/bin" >> $GITHUB_PATH
 
 
     - name: Initialize OrangeFox
@@ -28,18 +48,33 @@ jobs:
         cd fox
 
         repo init \
-        -u https://gitlab.com/OrangeFox/Manifest.git \
-        -b fox_16.0
+          -u https://gitlab.com/OrangeFox/Manifest.git \
+          -b fox_16.0 \
+          --depth=1
 
 
-    - name: Add device tree
+    - name: Add hero2lte device tree
       run: |
-        cd fox
+        mkdir -p fox/.repo/local_manifests
 
-        mkdir -p .repo/local_manifests
+        cat > fox/.repo/local_manifests/roomservice.xml <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
 
-        cp ../local_manifests/roomservice.xml \
-        .repo/local_manifests/
+<project
+ name="OrangeFoxRecovery/device_samsung_hero2lte"
+ path="device/samsung/hero2lte"
+ remote="github"
+ revision="fox_9.0" />
+
+<project
+ name="morogoku/android_kernel_samsung_universal8890"
+ path="kernel/samsung/universal8890"
+ remote="github"
+ revision="twrp" />
+
+</manifest>
+EOF
 
 
     - name: Sync source
@@ -50,17 +85,15 @@ jobs:
         -c \
         --force-sync \
         --no-clone-bundle \
-        -j$(nproc)
+        --no-tags \
+        -j2
 
 
     - name: Build OrangeFox
       run: |
-
         cd fox
 
         source build/envsetup.sh
-
-        export ALLOW_MISSING_DEPENDENCIES=true
 
         lunch twrp_hero2lte-eng
 
@@ -70,5 +103,7 @@ jobs:
     - name: Upload recovery
       uses: actions/upload-artifact@v4
       with:
-        name: OrangeFox-hero2lte
-        path: fox/out/target/product/hero2lte/*.img
+        name: OrangeFox-hero2lte-fox16
+        path: |
+          fox/out/target/product/hero2lte/*.img
+          fox/out/target/product/hero2lte/*.zip
