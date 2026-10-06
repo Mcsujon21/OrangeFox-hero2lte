@@ -39,6 +39,9 @@ jobs:
         repo init \
         -u https://gitlab.com/OrangeFox/Manifest.git \
         -b fox_12.1
+        - name: Check OrangeFox Manifest branches
+        run: |
+        git ls-remote --heads https://gitlab.com/OrangeFox/Manifest.git
 
         mkdir -p .repo/local_manifests
 
