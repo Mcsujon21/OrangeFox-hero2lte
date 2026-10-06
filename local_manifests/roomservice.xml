@@ -2,9 +2,6 @@
 
 <manifest>
 
-<remote name="github"
-fetch="https://github.com/" />
-
 <project
 name="OrangeFoxRecovery/device_samsung_hero2lte"
 path="device/samsung/hero2lte"
