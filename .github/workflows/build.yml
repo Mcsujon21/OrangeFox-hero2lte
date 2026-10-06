@@ -4,41 +4,83 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
 
-    - name: Checkout source
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+
+    - name: Install packages
       run: |
         sudo apt update
-        sudo apt install -y git curl python3 repo ccache
+        sudo apt install -y \
+          git \
+          curl \
+          python3 \
+          repo \
+          ccache \
+          openjdk-11-jdk \
+          zip \
+          unzip
 
-    - name: Check OrangeFox branches
-      run: |
-        git ls-remote --heads https://gitlab.com/OrangeFox/Manifest.git
 
-    - name: Setup repo
+    - name: Initialize OrangeFox
       run: |
         mkdir fox
         cd fox
 
         repo init \
-          -u https://gitlab.com/OrangeFox/Manifest.git
+          -u https://gitlab.com/OrangeFox/Manifest.git \
+          -b fox_16.0
+
+
+    - name: Add device manifest
+      run: |
+        cd fox
 
         mkdir -p .repo/local_manifests
 
         cp ../local_manifests/roomservice.xml \
         .repo/local_manifests/
 
+
     - name: Sync source
       run: |
         cd fox
-        repo sync -c -j$(nproc) --force-sync
 
-    - name: Show device tree
+        repo sync \
+          -c \
+          --force-sync \
+          --no-clone-bundle \
+          -j$(nproc)
+
+
+    - name: Setup build environment
       run: |
-        ls -la fox/device/samsung/hero2lte
+        cd fox
+
+        source build/envsetup.sh
+
+        lunch twrp_hero2lte-eng
+
+
+    - name: Build recovery
+      run: |
+        cd fox
+
+        source build/envsetup.sh
+
+        lunch twrp_hero2lte-eng
+
+        mka recoveryimage
+
+
+    - name: Upload recovery
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrangeFox-hero2lte
+        path: fox/out/target/product/hero2lte/recovery.img
