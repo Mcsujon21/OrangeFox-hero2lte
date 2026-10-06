@@ -37,8 +37,8 @@ jobs:
         cd fox
 
         repo init \
-          -u https://gitlab.com/OrangeFox/Manifest.git \
-          -b fox_9.0
+        -u https://gitlab.com/OrangeFox/Manifest.git \
+        -b fox_12.1
 
         mkdir -p .repo/local_manifests
 
