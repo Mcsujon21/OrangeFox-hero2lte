@@ -5,67 +5,40 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
 
-    - name: Checkout
+    - name: Checkout source
       uses: actions/checkout@v4
-
 
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y \
-          git gnupg flex bison build-essential zip curl \
-          zlib1g-dev gcc-multilib g++-multilib \
-          libc6-dev-i386 lib32z1-dev \
-          libncurses5-dev libxml2-utils xsltproc unzip bc
+        sudo apt install -y git curl python3 repo ccache
 
-
-    - name: Install repo tool
+    - name: Check OrangeFox branches
       run: |
-        mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-        chmod a+x ~/bin/repo
-        echo "$HOME/bin" >> $GITHUB_PATH
+        git ls-remote --heads https://gitlab.com/OrangeFox/Manifest.git
 
-
-    - name: Sync OrangeFox source
+    - name: Setup repo
       run: |
         mkdir fox
         cd fox
 
         repo init \
-        -u https://gitlab.com/OrangeFox/Manifest.git \
-        -b fox_12.1
-        - name: Check OrangeFox Manifest branches
-        run: |
-        git ls-remote --heads https://gitlab.com/OrangeFox/Manifest.git
+          -u https://gitlab.com/OrangeFox/Manifest.git
 
         mkdir -p .repo/local_manifests
 
         cp ../local_manifests/roomservice.xml \
-          .repo/local_manifests/
+        .repo/local_manifests/
 
-        repo sync -c -j$(nproc) --force-sync
-
-
-    - name: Build recovery
+    - name: Sync source
       run: |
         cd fox
+        repo sync -c -j$(nproc) --force-sync
 
-        export ALLOW_MISSING_DEPENDENCIES=true
-
-        source build/envsetup.sh
-
-        lunch omni_hero2lte-eng
-
-        mka recoveryimage
-
-
-    - name: Upload recovery
-      uses: actions/upload-artifact@v4
-      with:
-        name: OrangeFox-hero2lte
-        path: fox/out/target/product/hero2lte/recovery.img
+    - name: Show device tree
+      run: |
+        ls -la fox/device/samsung/hero2lte
