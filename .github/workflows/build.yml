@@ -8,75 +8,88 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/powershell
-          sudo apt clean
-          df -h
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libssl-dev libxml2-utils lzop pngcrush rsync schedtool squashfs-tools unzip zip zlib1g-dev
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo apt clean
+        df -h
 
-      - name: Install repo
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y bc bison build-essential curl flex git gnupg gperf \
+        imagemagick libncurses5-dev libssl-dev libxml2-utils lzop \
+        pngcrush rsync schedtool squashfs-tools unzip zip zstd python3
 
-      - name: Initialize OrangeFox
-        run: |
-          mkdir fox
-          cd fox
-          repo init \
-            -u https://gitlab.com/OrangeFox/Manifest.git \
-            -b fox_16.0 \
-            --depth=1
+    - name: Install repo
+      run: |
+        mkdir -p ~/bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+x ~/bin/repo
+        echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Add hero2lte tree
-        run: |
-          mkdir -p fox/.repo/local_manifests
+    - name: Initialize OrangeFox
+      run: |
+        mkdir fox
+        cd fox
 
-          cat > fox/.repo/local_manifests/roomservice.xml <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
+        repo init \
+        -u https://gitlab.com/OrangeFox/Manifest.git \
+        -b fox_16.0
+
+    - name: Add hero2lte device tree
+      run: |
+        cd fox
+
+        mkdir -p .repo/local_manifests
+
+        cat > .repo/local_manifests/roomservice.xml <<'EOF'
 <manifest>
 
 <project
  name="OrangeFoxRecovery/device_samsung_hero2lte"
  path="device/samsung/hero2lte"
  remote="github"
- revision="fox_9.0" />
+ revision="fox_16.0" />
+
+<project
+ name="morogoku/android_kernel_samsung_universal8890"
+ path="kernel/samsung/universal8890"
+ remote="github"
+ revision="twrp" />
 
 </manifest>
 EOF
 
-      - name: Sync source
-        run: |
-          cd fox
-          repo sync \
-            -c \
-            --force-sync \
-            --no-clone-bundle \
-            --no-tags \
-            -j2
+    - name: Sync source
+      run: |
+        cd fox
 
-      - name: Build OrangeFox
-        run: |
-          cd fox
-          source build/envsetup.sh
-          lunch twrp_hero2lte-eng
-          mka recoveryimage
+        repo sync \
+        -c \
+        --force-sync \
+        --no-clone-bundle \
+        -j2
 
-      - name: Upload recovery
-        uses: actions/upload-artifact@v4
-        with:
-          name: OrangeFox-hero2lte-fox16
-          path: fox/out/target/product/hero2lte/
+    - name: Build OrangeFox
+      run: |
+        cd fox
+
+        source build/envsetup.sh
+
+        lunch twrp_hero2lte-eng
+
+        mka recoveryimage
+
+    - name: Upload recovery
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrangeFox-hero2lte
+        path: fox/out/target/product/hero2lte/*.img
