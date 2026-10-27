@@ -53,7 +53,7 @@ jobs:
             -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git \
             -b twrp-11
 
-      - name: Configure device manifest
+            - name: Configure device manifest
         run: |
           cd "$GITHUB_WORKSPACE/fox"
           mkdir -p .repo/local_manifests
@@ -61,17 +61,17 @@ jobs:
           cat > .repo/local_manifests/hero2lte.xml <<'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <manifest>
-            <remote name="github" fetch="https://github.com/" />
             <project
               name="OrangeFoxRecovery/device_samsung_hero2lte"
               path="device/samsung/hero2lte"
-              remote="github"
-              revision="fox_11.0" />
+              revision="fox_11.0"
+              remote="github" />
+
             <project
               name="morogoku/android_kernel_samsung_universal8890"
               path="kernel/samsung/universal8890"
-              remote="github"
-              revision="twrp" />
+              revision="twrp"
+              remote="github" />
           </manifest>
           EOF
 
