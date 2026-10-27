@@ -1,161 +1,158 @@
 name: Mcsujon OrangeFox hero2lte fox11
 
 "on":
-workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-build:
-name: Build OrangeFox Recovery
-runs-on: ubuntu-22.04
-timeout-minutes: 360
+  build:
+    name: Build OrangeFox Recovery
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
 
-steps:
-  - name: Checkout builder repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout builder repository
+        uses: actions/checkout@v4
 
-  - name: Free disk space
-    run: |
-      sudo rm -rf /usr/local/lib/android
-      sudo rm -rf /usr/share/dotnet
-      sudo rm -rf /opt/ghc
-      df -h
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          df -h
 
-  - name: Install build dependencies
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y \
-        git curl python3 python-is-python3 \
-        bc bison build-essential flex \
-        zip unzip rsync ccache \
-        libssl-dev libelf-dev \
-        openjdk-11-jdk \
-        libncurses5-dev libncursesw5-dev \
-        zlib1g-dev lz4 libxml2-utils \
-        xsltproc schedtool
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git curl python3 python-is-python3 \
+            bc bison build-essential flex \
+            zip unzip rsync ccache \
+            libssl-dev libelf-dev \
+            openjdk-11-jdk \
+            libncurses5-dev libncursesw5-dev \
+            zlib1g-dev lz4 libxml2-utils \
+            xsltproc schedtool
 
-  - name: Install repo tool
-    run: |
-      mkdir -p "$HOME/bin"
-      curl -fL https://storage.googleapis.com/git-repo-downloads/repo \
-        -o "$HOME/bin/repo"
-      chmod +x "$HOME/bin/repo"
-      echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Install repo tool
+        run: |
+          mkdir -p "$HOME/bin"
+          curl -fL \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$HOME/bin/repo"
+          chmod +x "$HOME/bin/repo"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
 
-  - name: Initialize TWRP 11 source
-    run: |
-      mkdir -p "$GITHUB_WORKSPACE/fox"
-      cd "$GITHUB_WORKSPACE/fox"
-      repo init \
-        -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git \
-        -b twrp-11
+      - name: Initialize TWRP 11 source
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/fox"
+          cd "$GITHUB_WORKSPACE/fox"
+          repo init \
+            -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git \
+            -b twrp-11
 
-  - name: Add device and kernel manifest
-    run: |
-      cd "$GITHUB_WORKSPACE/fox"
-      mkdir -p .repo/local_manifests
+      - name: Add device and kernel manifest
+        run: |
+          cd "$GITHUB_WORKSPACE/fox"
+          mkdir -p .repo/local_manifests
 
-      cat > .repo/local_manifests/hero2lte.xml <<'EOF'
-      <?xml version="1.0" encoding="UTF-8"?>
-      <manifest>
-        <remote name="github" fetch="https://github.com/" />
+          cat > .repo/local_manifests/hero2lte.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project
+              name="OrangeFoxRecovery/device_samsung_hero2lte"
+              path="device/samsung/hero2lte"
+              revision="fox_11.0" />
 
-        <project
-          name="OrangeFoxRecovery/device_samsung_hero2lte"
-          path="device/samsung/hero2lte"
-          remote="github"
-          revision="fox_11.0" />
+            <project
+              name="morogoku/android_kernel_samsung_universal8890"
+              path="kernel/samsung/universal8890"
+              revision="twrp" />
+          </manifest>
+          EOF
 
-        <project
-          name="morogoku/android_kernel_samsung_universal8890"
-          path="kernel/samsung/universal8890"
-          remote="github"
-          revision="twrp" />
-      </manifest>
-      EOF
+      - name: Sync source
+        run: |
+          cd "$GITHUB_WORKSPACE/fox"
+          repo sync -c --force-sync --no-clone-bundle --no-tags -j2
 
-  - name: Sync source
-    run: |
-      cd "$GITHUB_WORKSPACE/fox"
-      repo sync -c --force-sync --no-clone-bundle --no-tags -j2
+      - name: Fetch OrangeFox R11 vendor files
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE/fox"
 
-  - name: Fetch OrangeFox R11 vendor files
-    run: |
-      set -e
-      cd "$GITHUB_WORKSPACE/fox"
+          if [ -e vendor/recovery ]; then
+            echo "ERROR: vendor/recovery already exists."
+            exit 1
+          fi
 
-      if [ -e vendor/recovery ]; then
-        echo "vendor/recovery already exists; stopping to avoid overwriting it."
-        exit 1
-      fi
+          git clone --depth 1 \
+            -b fox_11.0 \
+            https://gitlab.com/OrangeFox/vendor/recovery.git \
+            vendor/recovery
 
-      git clone --depth 1 \
-        -b fox_11.0 \
-        https://gitlab.com/OrangeFox/vendor/recovery.git \
-        vendor/recovery
+          test -f vendor/recovery/OrangeFox_A11.sh
 
-      test -f vendor/recovery/OrangeFox_A11.sh
+      - name: Check legacy OrangeFox patch
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE/fox"
 
-  - name: Check and apply legacy OrangeFox patch
-    run: |
-      set -e
-      cd "$GITHUB_WORKSPACE/fox"
+          test -f build/make/core/Makefile
+          test -f build/make/core/config.mk
+          test -f build/make/make/envsetup.sh
+          test -f vendor/twrp/build/envsetup.sh
+          test -f vendor/recovery/OrangeFox_A11.sh
 
-      test -f build/make/core/Makefile
-      test -f build/make/core/config.mk
-      test -f build/make/make/envsetup.sh
-      test -f vendor/twrp/build/envsetup.sh
-      test -f vendor/recovery/OrangeFox_A11.sh
+          curl -fL \
+            https://gitlab.com/OrangeFox/sync/-/raw/master/legacy/patches/patch-manifest-fox_11.0.diff \
+            -o /tmp/patch-manifest-fox_11.0.diff
 
-      curl -fL \
-        https://gitlab.com/OrangeFox/sync/-/raw/master/legacy/patches/patch-manifest-fox_11.0.diff \
-        -o /tmp/patch-manifest-fox_11.0.diff
+          cd build/make
+          git apply --check /tmp/patch-manifest-fox_11.0.diff
+          git apply /tmp/patch-manifest-fox_11.0.diff
 
-      cd build/make
-      git apply --check /tmp/patch-manifest-fox_11.0.diff
-      git apply /tmp/patch-manifest-fox_11.0.diff
+      - name: Verify device files
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE/fox"
 
-  - name: Verify device configuration
-    run: |
-      set -e
-      cd "$GITHUB_WORKSPACE/fox"
+          test -f device/samsung/hero2lte/BoardConfig.mk
+          test -f device/samsung/hero2lte/twrp_hero2lte.mk
+          test -f device/samsung/hero2lte/vendorsetup.sh
+          test -f kernel/samsung/universal8890/Makefile
 
-      test -f device/samsung/hero2lte/BoardConfig.mk
-      test -f device/samsung/hero2lte/twrp_hero2lte.mk
-      test -f device/samsung/hero2lte/vendorsetup.sh
-      test -f kernel/samsung/universal8890/Makefile
+          grep -nE \
+            'FOX_VERSION|OF_MAINTAINER|FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER' \
+            device/samsung/hero2lte/vendorsetup.sh || true
 
-      grep -nE \
-        'FOX_VERSION|OF_MAINTAINER|FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER' \
-        device/samsung/hero2lte/vendorsetup.sh || true
+      - name: Build OrangeFox recovery
+        shell: bash
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE/fox"
 
-  - name: Build OrangeFox recovery
-    shell: bash
-    run: |
-      set -o pipefail
-      cd "$GITHUB_WORKSPACE/fox"
+          export ALLOW_MISSING_DEPENDENCIES=true
+          export FOX_BUILD_DEVICE=hero2lte
+          export OF_FORCE_PREBUILT_KERNEL=1
+          export OF_SAMSUNG_DEVICE=1
+          export LC_ALL=C
 
-      export ALLOW_MISSING_DEPENDENCIES=true
-      export FOX_BUILD_DEVICE=hero2lte
-      export OF_FORCE_PREBUILT_KERNEL=1
-      export OF_SAMSUNG_DEVICE=1
-      export LC_ALL=C
+          source build/envsetup.sh
+          lunch twrp_hero2lte-eng
+          mka adbd recoveryimage 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
 
-      source build/envsetup.sh
-      lunch twrp_hero2lte-eng
-      mka adbd recoveryimage 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
-
-  - name: Upload recovery artifacts
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: Mcsujon-OrangeFox-hero2lte-fox11
-      path: |
-        fox/out/target/product/hero2lte/recovery.img
-        fox/out/target/product/hero2lte/*.zip
-        fox/out/target/product/hero2lte/*.tar
-        build.log
-      if-no-files-found: warn
-      retention-days: 14
+      - name: Upload recovery artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mcsujon-OrangeFox-hero2lte-fox11
+          path: |
+            fox/out/target/product/hero2lte/recovery.img
+            fox/out/target/product/hero2lte/*.zip
+            fox/out/target/product/hero2lte/*.tar
+            build.log
+          if-no-files-found: warn
+          retention-days: 14
