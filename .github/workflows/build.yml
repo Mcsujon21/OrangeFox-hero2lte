@@ -53,8 +53,9 @@ jobs:
             -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git \
             -b twrp-11
 
-            - name: Configure device manifest
+      - name: Configure device manifest
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE/fox"
           mkdir -p .repo/local_manifests
 
@@ -66,7 +67,6 @@ jobs:
               path="device/samsung/hero2lte"
               revision="fox_11.0"
               remote="github" />
-
             <project
               name="morogoku/android_kernel_samsung_universal8890"
               path="kernel/samsung/universal8890"
@@ -75,8 +75,11 @@ jobs:
           </manifest>
           EOF
 
+          cat .repo/local_manifests/hero2lte.xml
+
       - name: Sync source
         run: |
+          set -e
           cd "$GITHUB_WORKSPACE/fox"
           repo sync -c --force-sync --no-clone-bundle --no-tags -j2
 
@@ -87,6 +90,7 @@ jobs:
 
           if [ -e vendor/recovery ]; then
             echo "ERROR: vendor/recovery already exists."
+            echo "Check the synced manifest before continuing."
             exit 1
           fi
 
@@ -133,7 +137,9 @@ jobs:
       - name: Build recovery
         shell: bash
         run: |
+          set -e
           set -o pipefail
+
           cd "$GITHUB_WORKSPACE/fox"
 
           export ALLOW_MISSING_DEPENDENCIES=true
@@ -144,7 +150,9 @@ jobs:
 
           source build/envsetup.sh
           lunch twrp_hero2lte-eng
-          mka adbd recoveryimage 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+
+          mka adbd recoveryimage 2>&1 \
+            | tee "$GITHUB_WORKSPACE/build.log"
 
       - name: Upload build artifacts
         if: always()
