@@ -102,26 +102,46 @@ jobs:
             -print
       
 
-      - name: Verify and apply legacy patch
+            - name: Verify and apply legacy patch
         run: |
-          set -e
+          set -eu
           cd "$GITHUB_WORKSPACE/fox"
 
-          test -f build/make/core/Makefile
-          test -f build/make/core/config.mk
-          test -f build/make/make/envsetup.sh
-          test -f vendor/twrp/build/envsetup.sh
-          test -f vendor/recovery/OrangeFox_A11.sh
+          echo "=== Checking required files ==="
+          for f in \
+            build/make/core/Makefile \
+            build/make/core/config.mk \
+            build/make/envsetup.sh \
+            vendor/twrp/build/envsetup.sh \
+            vendor/recovery/OrangeFox_A11.sh
+          do
+            if [ ! -f "$f" ]; then
+              echo "MISSING FILE: $f"
+              exit 1
+            fi
+            echo "OK: $f"
+          done
 
+          echo "=== Downloading OrangeFox patch ==="
           curl -fL \
             https://gitlab.com/OrangeFox/sync/-/raw/master/legacy/patches/patch-manifest-fox_11.0.diff \
             -o /tmp/patch-manifest-fox_11.0.diff
 
+          echo "=== Checking patch compatibility ==="
           cd build/make
-          git apply --check /tmp/patch-manifest-fox_11.0.diff
-          git apply /tmp/patch-manifest-fox_11.0.diff
 
-      - name: Verify device configuration
+          if git apply --check /tmp/patch-manifest-fox_11.0.diff; then
+            echo "Patch check passed."
+            git apply /tmp/patch-manifest-fox_11.0.diff
+            echo "Patch applied successfully."
+          else
+            echo "Patch check failed. Showing detailed diagnostics:"
+            git status --short
+            git apply --verbose --check /tmp/patch-manifest-fox_11.0.diff || true
+            exit 1
+          fi
+
+           - name: Verify device configuration
         run: |
           set -e
           cd "$GITHUB_WORKSPACE/fox"
