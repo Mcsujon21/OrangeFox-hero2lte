@@ -1,6 +1,6 @@
 name: Mcsujon OrangeFox hero2lte fox11
 
-on:
+"on":
 workflow_dispatch:
 
 permissions:
@@ -60,6 +60,8 @@ steps:
       cat > .repo/local_manifests/hero2lte.xml <<'EOF'
       <?xml version="1.0" encoding="UTF-8"?>
       <manifest>
+        <remote name="github" fetch="https://github.com/" />
+
         <project
           name="OrangeFoxRecovery/device_samsung_hero2lte"
           path="device/samsung/hero2lte"
@@ -81,11 +83,11 @@ steps:
 
   - name: Fetch OrangeFox R11 vendor files
     run: |
+      set -e
       cd "$GITHUB_WORKSPACE/fox"
 
       if [ -e vendor/recovery ]; then
-        echo "ERROR: vendor/recovery already exists."
-        echo "Inspect the existing directory before continuing."
+        echo "vendor/recovery already exists; stopping to avoid overwriting it."
         exit 1
       fi
 
@@ -117,21 +119,20 @@ steps:
 
   - name: Verify device configuration
     run: |
+      set -e
       cd "$GITHUB_WORKSPACE/fox"
 
       test -f device/samsung/hero2lte/BoardConfig.mk
       test -f device/samsung/hero2lte/twrp_hero2lte.mk
       test -f device/samsung/hero2lte/vendorsetup.sh
+      test -f kernel/samsung/universal8890/Makefile
 
-      echo "Device tree:"
       grep -nE \
         'FOX_VERSION|OF_MAINTAINER|FOX_USE_TWRP_RECOVERY_IMAGE_BUILDER' \
         device/samsung/hero2lte/vendorsetup.sh || true
 
-      echo "Kernel:"
-      test -f kernel/samsung/universal8890/Makefile
-
   - name: Build OrangeFox recovery
+    shell: bash
     run: |
       set -o pipefail
       cd "$GITHUB_WORKSPACE/fox"
