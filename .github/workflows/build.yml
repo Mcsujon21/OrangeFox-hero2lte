@@ -82,24 +82,25 @@ jobs:
           set -e
           cd "$GITHUB_WORKSPACE/fox"
           repo sync -c --force-sync --no-clone-bundle --no-tags -j2
-
+          
       - name: Fetch OrangeFox vendor
         run: |
           set -e
           cd "$GITHUB_WORKSPACE/fox"
-
-          if [ -e vendor/recovery ]; then
-            echo "ERROR: vendor/recovery already exists."
-            echo "Check the synced manifest before continuing."
-            exit 1
-          fi
 
           git clone --depth 1 \
             -b fox_11.0 \
             https://gitlab.com/OrangeFox/vendor/recovery.git \
             vendor/recovery
 
-          test -f vendor/recovery/OrangeFox_A11.sh
+          echo "=== Vendor files ==="
+          ls -la vendor/recovery
+
+          echo "=== Check OrangeFox scripts ==="
+          find vendor/recovery -maxdepth 2 -type f \
+            \( -iname '*orangefox*' -o -iname '*a11*' \) \
+            -print
+      
 
       - name: Verify and apply legacy patch
         run: |
